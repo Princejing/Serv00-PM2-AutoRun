@@ -1,33 +1,33 @@
-名称：自动运行
+name: autorun
 
-在：
-  工作流程_调度：
-  浙江：
+on:
+  workflow_dispatch:
+  schedule:
     # 5分钟运行一次
-    -计划任务：' 0/5 * * * * '
+    - cron: '0/5 * * * *'
     
 
-职位：
-  ssh 并运行：
-    运行： ubuntu-latest
-    步骤：
-    -名称：结账
-      使用： actions/checkout@v2
+jobs:
+  ssh-and-run:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
 
-    -名称：设置 SSH
-      使用： webfactory/ssh-agent@v0.5.3
-      和：
-        ssh-私钥： $ { { Secrets.SSH_PRIVATE_KEY } }
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.5.3
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-    - name :检查服务是否正在运行
-      id ：检查服务
-      运行：|
-        如果curl --head --silent --fail https://wenjie.us.kg > /dev/null;然后#这里改成你的Web服务的地址
-          回声“service_status=运行”>> $GITHUB_ENV
-        别的
-          回声“service_status=not_running”>> $GITHUB_ENV
-        菲
+    - name: Check if service is running
+      id: check_service
+      run: |
+        if curl --head --silent --fail https://wenjie.us.kg > /dev/null; then #这里改成你的Web服务的地址
+          echo "service_status=running" >> $GITHUB_ENV
+        else
+          echo "service_status=not_running" >> $GITHUB_ENV
+        fi
 
-    - name ：如果服务未运行，则在远程服务器上运行脚本
-      if : env.service_status == 'not_running'
-      run : ssh -o StrictHostKeyChecking=no seeage@s7.serv00.com "/home/seeage/run.sh"  #这里改成你的用户名@你的ssh服务器地址
+    - name: Run script on remote server if service is not running
+      if: env.service_status == 'not_running'
+      run: ssh -o StrictHostKeyChecking=no seeage@s7.serv00.com "/home/seeage/run.sh" #这里改成你的用户名@你的ssh服务器地址
